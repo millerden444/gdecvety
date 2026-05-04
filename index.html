@@ -187,7 +187,8 @@ nav{
 
 /* ══ КАТЕГОРИИ С ФОТО ══ */
 .cat-strip{
-  display:flex;gap:12px;
+  display:flex;gap:0;
+  justify-content:space-between;
   overflow-x:auto;
   padding:24px 20px;
   background:var(--white);
@@ -195,11 +196,13 @@ nav{
   scrollbar-width:none;-ms-overflow-style:none;
   -webkit-overflow-scrolling:touch;
 }
+@media(max-width:767px){
+  .cat-strip{justify-content:flex-start;gap:12px;}
+}
 .cat-strip::-webkit-scrollbar{display:none}
 .cat-card{
-  flex:1 0 110px;
-  min-width:110px;max-width:160px;
-  height:160px;
+  flex-shrink:0;
+  width:130px;height:160px;
   position:relative;overflow:hidden;
   cursor:pointer;
   -webkit-tap-highlight-color:transparent;
