@@ -1331,6 +1331,9 @@ footer{
 }
 .co-field input:focus,.co-field select:focus,.co-field textarea:focus{border-color:var(--rose)}
 .co-field textarea{resize:vertical;min-height:80px;border-radius:10px}
+.co-field input[type="date"]{cursor:pointer;color:var(--text)}
+.co-field input[type="date"]::-webkit-calendar-picker-indicator{opacity:.5;cursor:pointer}
+.co-addr-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .co-tabs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
 .co-tab{
   padding:13px;border:1.5px solid var(--border);
@@ -2890,6 +2893,16 @@ function openCheckout() {
   if (s2) s2.style.display = 'none';
   renderOrderPreview();
   setDelivery('delivery');
+  // Set min date to today
+  const dateInput = document.getElementById('coDate');
+  if (dateInput) {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth()+1).padStart(2,'0');
+    const dd = String(today.getDate()).padStart(2,'0');
+    dateInput.min = `${yyyy}-${mm}-${dd}`;
+    if (!dateInput.value) dateInput.value = `${yyyy}-${mm}-${dd}`;
+  }
   const ov = document.getElementById('checkoutOverlay');
   if (ov) { ov.classList.add('open'); document.body.style.overflow = 'hidden'; }
 }
@@ -2929,14 +2942,36 @@ function setDelivery(type) {
   if (tp) tp.classList.toggle('active', type === 'pickup');
 }
 
+function buildAddr() {
+  const street = (document.getElementById('coStreet') || {}).value || '';
+  const house  = (document.getElementById('coHouse')  || {}).value || '';
+  const flat   = (document.getElementById('coFlat')   || {}).value || '';
+  let a = [street.trim(), house.trim()].filter(Boolean).join(', д. ');
+  if (flat.trim()) a += ', кв. ' + flat.trim();
+  return a;
+}
+
+function formatDate(val) {
+  if (!val) return '';
+  // val is YYYY-MM-DD from <input type="date">
+  const parts = val.split('-');
+  if (parts.length !== 3) return val;
+  const months = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+  const d = parseInt(parts[2], 10);
+  const m = parseInt(parts[1], 10) - 1;
+  return d + ' ' + (months[m] || '');
+}
+
 function goToStep2() {
   const name  = (document.getElementById('coName')  || {}).value || '';
   const phone = (document.getElementById('coPhone') || {}).value || '';
   if (!name.trim())  { alert('Введите ваше имя');       document.getElementById('coName').focus();  return; }
   if (!phone.trim()) { alert('Введите номер телефона'); document.getElementById('coPhone').focus(); return; }
   if (deliveryType === 'delivery') {
-    const addr = (document.getElementById('coAddr') || {}).value || '';
-    if (!addr.trim()) { alert('Введите адрес доставки'); document.getElementById('coAddr').focus(); return; }
+    const street = (document.getElementById('coStreet') || {}).value || '';
+    const house  = (document.getElementById('coHouse')  || {}).value || '';
+    if (!street.trim()) { alert('Введите улицу'); document.getElementById('coStreet').focus(); return; }
+    if (!house.trim())  { alert('Введите номер дома'); document.getElementById('coHouse').focus(); return; }
   }
   renderFinalSummary();
   selectPay('cash');
@@ -2960,12 +2995,12 @@ function renderFinalSummary() {
   const phone     = (document.getElementById('coPhone')     || {}).value || '';
   const recipient = (document.getElementById('coRecipient') || {}).value || '';
   const addr      = deliveryType === 'delivery'
-    ? ((document.getElementById('coAddr') || {}).value || '')
+    ? buildAddr()
     : 'Самовывоз: ул. Ватутина, 38';
   const date    = (document.getElementById('coDate')       || {}).value || '';
   const time    = (document.getElementById('coTime')       || {}).value || '';
   const pickup  = (document.getElementById('coPickupTime') || {}).value || '';
-  const timeVal = deliveryType === 'delivery' ? (date + ' ' + time).trim() : pickup;
+  const timeVal = deliveryType === 'delivery' ? (formatDate(date) + (time ? ', ' + time : '')).trim() : pickup;
   const total   = cartTotal();
 
   el.innerHTML = `
@@ -3000,12 +3035,12 @@ async function submitCheckout() {
   const recipient = (document.getElementById('coRecipient') || {}).value || '';
   const wish      = (document.getElementById('coWish')      || {}).value || '';
   const addr      = deliveryType === 'delivery'
-    ? ((document.getElementById('coAddr') || {}).value || '')
+    ? buildAddr()
     : 'Самовывоз: ул. Ватутина, 38';
   const date    = (document.getElementById('coDate')       || {}).value || '';
   const time    = (document.getElementById('coTime')       || {}).value || '';
   const pickup  = (document.getElementById('coPickupTime') || {}).value || '';
-  const timeVal = deliveryType === 'delivery' ? (date + ' ' + time).trim() : pickup;
+  const timeVal = deliveryType === 'delivery' ? (formatDate(date) + (time ? ', ' + time : '')).trim() : pickup;
 
   const s = loadSettings();
   const itemsText = cart.map(x => `${x.emoji||'🌸'} ${x.name} × ${x.qty} (${x.price})`).join('\n');
@@ -3188,8 +3223,12 @@ document.addEventListener('DOMContentLoaded', function() {
             <button class="co-tab" id="tabPick" onclick="setDelivery('pickup')">🏪 Самовывоз</button>
           </div>
           <div id="deliveryFields">
-            <div class="co-field"><label>Адрес *</label><input type="text" id="coAddr" placeholder="Улица, дом, квартира"></div>
-            <div class="co-field"><label>Дата</label><input type="text" id="coDate" placeholder="Сегодня / Завтра / 5 мая"></div>
+            <div class="co-field"><label>Улица *</label><input type="text" id="coStreet" placeholder="Например: ул. Ватутина"></div>
+            <div class="co-addr-row">
+              <div class="co-field"><label>Дом *</label><input type="text" id="coHouse" placeholder="38"></div>
+              <div class="co-field"><label>Квартира</label><input type="text" id="coFlat" placeholder="15"></div>
+            </div>
+            <div class="co-field"><label>Дата</label><input type="date" id="coDate" min=""></div>
             <div class="co-field">
               <label>Время</label>
               <select id="coTime">
