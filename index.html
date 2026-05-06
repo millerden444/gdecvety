@@ -2158,7 +2158,7 @@ footer{
         </div>
 
         <div class="a-label" style="margin-top:24px">Контакты и ссылки</div>
-        <div class="s-group"><label>Telegram username (без @)</label><input type="text" id="sTg" placeholder="gdecvety"></div>
+        <div class="s-group"><label>Telegram username (без @)</label><input type="text" id="sTg" placeholder="ваш_username"></div>
         <div class="s-group"><label>ВКонтакте (ссылка)</label><input type="text" id="sVk" placeholder="https://vk.com/gdecvety"></div>
         <div class="s-group"><label>Телефон</label><input type="text" id="sPhone" placeholder="+7 (3439) ..."></div>
         <div class="s-group"><label>Адрес</label><input type="text" id="sAddress" placeholder="ул. Ватутина, 38"></div>
@@ -2251,7 +2251,7 @@ function loadBouquets(){
 function saveBouquets(b){localStorage.setItem('gdc_v4',JSON.stringify(b))}
 function loadSettings(){
   const r=localStorage.getItem('gdc_settings_v2');
-  return r?JSON.parse(r):{tg:'gdecvety',vk:'https://vk.com/gdecvety',phone:'',address:'ул. Ватутина, 38',hours:'Пн–Вс, 8:00–20:00',catPhotos:{}};
+  return r?JSON.parse(r):{tg:'',vk:'https://vk.com/gdecvety',phone:'',address:'ул. Ватутина, 38',hours:'Пн–Вс, 8:00–20:00',catPhotos:{}};
 }
 function saveSettingsData(s){localStorage.setItem('gdc_settings_v2',JSON.stringify(s))}
 function getPwd(){return localStorage.getItem('gdc_pwd')||'admin123'}
@@ -2307,7 +2307,15 @@ function pickBouquet(name){
 // ── APPLY SETTINGS ──
 function applySettings(){
   const s=loadSettings();
-  document.querySelectorAll('a[href*="t.me"]').forEach(a=>{a.href=`https://t.me/${s.tg||'gdecvety'}`});
+  document.querySelectorAll('a[href*="t.me"], a[href="#"][class*="tg"], .tg-float-btn, .nav-social-icon[title="Telegram"], .social-btn[href*="t.me"]').forEach(a=>{
+    if(s.tg) a.href=`https://t.me/${s.tg}`;
+    else a.href='#';
+  });
+  // also catch any remaining hardcoded t.me links
+  document.querySelectorAll('a[href*="t.me"]').forEach(a=>{
+    if(s.tg) a.href=`https://t.me/${s.tg}`;
+    else a.href='#';
+  });
   if(s.vk)document.querySelectorAll('a[href*="vk.com"]').forEach(a=>{a.href=s.vk});
 
   const hero = document.getElementById('heroSection');
@@ -3022,7 +3030,11 @@ async function submitCheckout() {
     '💳 Оплата: ' + payLabel
   );
 
-  window.open('https://t.me/' + (s.tg || 'gdecvety') + '?text=' + msg, '_blank');
+  if(!s.tg){
+    alert('Telegram не настроен. Укажите ваш Telegram username в настройках администратора.');
+    return;
+  }
+  window.open('https://t.me/' + s.tg + '?text=' + msg, '_blank');
   cart = [];
   saveCart();
   closeCheckout();
