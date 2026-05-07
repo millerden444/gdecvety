@@ -2254,7 +2254,7 @@ function loadBouquets(){
 function saveBouquets(b){localStorage.setItem('gdc_v4',JSON.stringify(b))}
 function loadSettings(){
   const r=localStorage.getItem('gdc_settings_v2');
-  return r?JSON.parse(r):{tg:'',vk:'https://vk.com/gdecvety',phone:'',address:'ул. Ватутина, 38',hours:'Пн–Вс, 8:00–20:00',catPhotos:{}};
+  return r?JSON.parse(r):{tg:'',vk:'',phone:'',address:'ул. Ватутина, 38',hours:'Пн–Вс, 8:00–20:00',catPhotos:{}};
 }
 function saveSettingsData(s){localStorage.setItem('gdc_settings_v2',JSON.stringify(s))}
 function getPwd(){return localStorage.getItem('gdc_pwd')||'admin123'}
@@ -2319,7 +2319,10 @@ function applySettings(){
     if(s.tg) a.href=`https://t.me/${s.tg}`;
     else a.href='#';
   });
-  if(s.vk)document.querySelectorAll('a[href*="vk.com"]').forEach(a=>{a.href=s.vk});
+  document.querySelectorAll('a[href*="vk.com"]').forEach(a=>{
+    if(s.vk) a.href=s.vk;
+    else a.href='#';
+  });
 
   const hero = document.getElementById('heroSection');
   const heroBg = document.getElementById('heroBg');
